@@ -4,7 +4,7 @@ from database import get_eclipse_db, get_postgres_db
 from queries.assembly_form_query import get_measures_for_failed_boards, get_phase_traceability_data
 from sqlalchemy import text
 from datetime import datetime
-
+import time
 from pydantic import BaseModel, ConfigDict, Field
 
 from typing import Any, Dict, List, Optional
@@ -44,7 +44,7 @@ def clean_row_data(row_dict: Dict[str, Any]) -> Dict[str, Any]:
 
 @router.get("/v2/get_all_fails/", response_model=AllFailsResponse)
 def get_all_fails(
-    phase_id: int = Query(6204215, description="Identyfikator fazy (IdPhase)"),
+    phase_id: Any = Query(6204215, description="Identyfikator fazy (IdPhase)"),
     parts_id: Optional[int] = Query(None, description="Opcjonalny filtr IdParts"),
     start_date: datetime = Query(datetime(2026, 8, 24, 0, 0, 0)),
     end_date: datetime = Query(datetime(2026, 9, 24, 0, 0, 0)),
@@ -219,6 +219,9 @@ def get_all_ur_breakdown_info(
 class MachineKPISchema(BaseModel):
     machine_id: int
     machine_name: str
+    phase_id: Optional[str] = Field(None, description="Identyfikator fazy maszyny")
+    alias: Optional[str] = Field(None, description="Alias maszyny")
+    sigip_num: Optional[str] = Field(None, description="Numer SIGIP")
     total_failures: int
     resolved_failures: int
     mttr_hours: float = Field(..., description="Średni czas trwania naprawy w godzinach")
@@ -255,6 +258,9 @@ aggregated AS (
     SELECT 
         m.id AS machine_id,
         m.name AS machine_name,
+        m.phase_id AS phase_id,
+        m.alias AS alias,
+        m.sigip_num AS sigip_num,
         EXTRACT(EPOCH FROM (p.range_end - p.range_start)) AS total_period_seconds,
         COUNT(bd.breakdown_id) AS total_failures,
         COUNT(bd.repair_duration_seconds) AS resolved_failures,
@@ -263,11 +269,14 @@ aggregated AS (
     CROSS JOIN params p
     LEFT JOIN breakdown_durations bd ON TRUE
     WHERE m.id = p.target_machine_id
-    GROUP BY m.id, m.name, p.range_start, p.range_end
+    GROUP BY m.id, m.name, m.phase_id, m.alias, m.sigip_num, p.range_start, p.range_end
 )
 SELECT 
     machine_id,
     machine_name,
+    phase_id,
+    alias,
+    sigip_num,
     total_failures,
     resolved_failures,
     CAST(
