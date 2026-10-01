@@ -6,11 +6,12 @@ from sqlalchemy.orm import Session, sessionmaker
 from config import settings
 
 conn_str_eclipse = (
-    f"Driver={{ODBC Driver 17 for SQL Server}};"
+    f"Driver={{ODBC Driver 18 for SQL Server}};"
     f"Server={settings.eclipse_host};"
     f"DATABASE={settings.eclipse_database};"
     f"UID={settings.eclipse_user};"
-    f"PWD={settings.eclipse_password}"
+    f"PWD={settings.eclipse_password};"
+    f"TrustServerCertificate=yes;"
 )
 
 encoded_eclipse_str = quote_plus(conn_str_eclipse)
