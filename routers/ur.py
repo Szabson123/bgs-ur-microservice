@@ -230,7 +230,6 @@ class MachineKPISchema(BaseModel):
     mtbf_interval: Optional[str] = Field(None, description="Format interwału bezawaryjnej pracy")
 
 
-# --- Zapytanie SQL z parametrami bazodanowymi ---
 KPI_SQL = text("""
 WITH params AS (
     SELECT 
@@ -315,7 +314,6 @@ FROM aggregated;
 """)
 
 
-# --- Endpoint ---
 @router.get("/{machine_id}/kpi", response_model=MachineKPISchema)
 def get_machine_kpi(
     machine_id: int,
